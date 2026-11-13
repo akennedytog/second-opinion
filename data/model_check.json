@@ -1,0 +1,20 @@
+{
+ "sensitivity": {
+  "published_rows": 137,
+  "computed_metas": 438,
+  "matched_within_0.01": 136,
+  "pct": 99.3,
+  "median_abs_diff": 0.00042,
+  "p90_abs_diff": 0.0016,
+  "max_abs_diff": 0.0218
+ },
+ "specificity": {
+  "published_rows": 137,
+  "computed_metas": 437,
+  "matched_within_0.01": 137,
+  "pct": 100.0,
+  "median_abs_diff": 0.00013,
+  "p90_abs_diff": 0.001,
+  "max_abs_diff": 0.0035
+ }
+}

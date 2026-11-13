@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "Second Opinion: a verifier for the arithmetic of published meta-analyses"
+abstract: >-
+  An open harness that re-derives the quantitative claims of published diagnostic
+  meta-analyses and reports disagreement with a source line. Reproduces 137/137 published
+  pooled specificity estimates and 136/137 sensitivity estimates within 0.01.
+authors:
+  - family-names: "Kennedy"
+    given-names: "Alec"
+    affiliation: "The One Group"
+version: 0.1.0
+date-released: "2026-11-12"
+license: MIT
+repository-code: "https://github.com/akennedytog/second-opinion"
