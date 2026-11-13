@@ -66,7 +66,12 @@ def map_headers(header_cells):
 
 
 def score(cells, nums, order):
-    """Given 4 ints in `order`, compare implied sens/spec to printed pcts."""
+    """Given 4 ints in `order`, compare implied sens/spec to the printed percentages.
+
+    The printed order is taken as (sensitivity, specificity). We do NOT search over
+    permutations: swapping them lets almost any column order fit and destroys the
+    ability to detect ambiguity.
+    """
     tp, fp, fn, tn = (nums[order.index(r)] for r in ("tp", "fp", "fn", "tn"))
     n1, n0 = tp + fn, fp + tn
     if n1 < 3 or n0 < 3:
@@ -75,13 +80,10 @@ def score(cells, nums, order):
     if len(pcts) < 2:
         return None
     sens, spec = tp / n1, tn / n0
-    best = None
-    for s_rep, c_rep in itertools.permutations(pcts[:4], 2):
-        d = max(abs(sens - s_rep), abs(spec - c_rep))
-        if best is None or d < best[0]:
-            best = (d, s_rep, c_rep)
+    s_rep, c_rep = pcts[0], pcts[1]
     return {"cells": [tp, fp, fn, tn], "sens": sens, "spec": spec,
-            "sens_rep": best[1], "spec_rep": best[2], "max_diff": best[0]}
+            "sens_rep": s_rep, "spec_rep": c_rep,
+            "max_diff": max(abs(sens - s_rep), abs(spec - c_rep))}
 
 
 def audit_table(t):
@@ -100,7 +102,9 @@ def audit_table(t):
         four = nums[:4]
 
         cands = []
+        header_used = False
         if header and max(header.values()) < len(texts):
+            header_used = True
             vals, ok = [], True
             for r in ("tp", "fp", "fn", "tn"):
                 m = INT.match(texts[header[r]]) if header[r] < len(texts) else None
@@ -108,33 +112,44 @@ def audit_table(t):
                     ok = False
                     break
                 vals.append(int(m.group(1)))
-            if ok:
-                s = score(texts, vals, ("tp", "fp", "fn", "tn"))
-                if s:
-                    cands.append((s["max_diff"], "header", s))
+            if not ok:
+                out["rows"].append({"status": "unparseable", "reason": "header_bind_failed",
+                                    "text": " | ".join(texts)[:90]})
+                continue
+            s = score(texts, vals, ("tp", "fp", "fn", "tn"))
+            if not s:
+                out["rows"].append({"status": "unparseable", "reason": "no_reference_pcts",
+                                    "text": " | ".join(texts)[:90]})
+                continue
+            # An explicit header is authoritative. If the data disagrees with it we
+            # record a conflict for human review; we never silently reorder columns.
+            status = "resolved" if s["max_diff"] <= 0.02 else "header_conflict"
+            out["rows"].append({"status": status, "via": "header", **s,
+                                "text": " | ".join(texts)[:90]})
+            continue
 
+        # No header at all: positional hypotheses may compete, but any ambiguity is
+        # recorded as such and never becomes a finding.
         for name, order in ORDERS.items():
             s = score(texts, four, order)
             if s:
                 cands.append((s["max_diff"], name, s))
 
         if not cands:
-            out["rows"].append({"status": "unparseable", "text": " | ".join(texts)[:90]})
+            out["rows"].append({"status": "unparseable", "reason": "no_hypothesis",
+                                "text": " | ".join(texts)[:90]})
             continue
 
         cands.sort(key=lambda x: x[0])
         d, name, s = cands[0]
         second = cands[1][0] if len(cands) > 1 else None
-        hdr_conflict = bool(header) and name != "header" and d <= 0.02
         rec = {"via": name, **s, "text": " | ".join(texts)[:90]}
-        if hdr_conflict:
-            rec["header_conflict"] = True
         if d <= 0.02 and (second is None or second - d > 0.05):
-            rec["status"] = "resolved"
+            rec["status"] = "resolved_no_header"
         elif d <= 0.02:
-            rec["status"] = "resolved_ambiguous_order"
+            rec["status"] = "ambiguous_order"
         else:
-            rec["status"] = "mismatch"
+            rec["status"] = "unresolved_values"
         out["rows"].append(rec)
     return out
 

@@ -1,55 +1,77 @@
-# Worked example: one cell that contradicts its source paper
+# Worked example: what a single case can and cannot show
 
-This is the smallest complete unit of the audit. Everything below is reproducible from the
-citation and the two public sources; no special access is required.
+**Status: substantially withdrawn.** The version shipped in v0.1.0 claimed that re-extracted cells
+"reproduce the paper" and that the review's cells were wrong. Re-checking against the primary
+source shows that claim was overstated. This document records what survives and what does not.
 
-## The claim under test
+## The primary source
 
-A diagnostic meta-analysis (Cochrane review CD009372, "Computed tomography angiography or magnetic
-resonance angiography for detection of intracranial vascular malformations in patients with
-intracerebral haemorrhage") extracted four counts from one of its included trials:
+Yeung et al., *Canadian Journal of Neurological Sciences*, 2009.
+doi:10.1017/S0317167100006533
 
-**Yeung et al. 2009**, *Can J Neurol Sci* — doi:10.1017/S0317167100006533
+Verified directly from the PDF:
 
-| Source | TP | FP | FN | TN | Total N | Implied sensitivity | Implied specificity |
+- 286 patients screened between January 2001 and February 2007; **55 patients formed the study
+  cohort** ("Fifty five patients met inclusion criteria").
+- Diagnostic yield for DSA was **45% (25/55)** — i.e. 25 patients had a vascular lesion, 30 did not.
+- Table 1 reports accuracy **per reader**, and an "Overall" row:
+
+| | Sensitivity | Specificity |
+|---|---|---|
+| Reader 1 | 88 | 90 |
+| Reader 2 | 92 | 97 |
+| Reader 3 | 88 | 90 |
+| **Overall** | **89** | **92** |
+
+## What this means — and it undercuts the original example
+
+**The "Overall" row is the mean of the three readers, not a single 2×2 table.**
+
+- (88 + 92 + 88) / 3 = 89.3 → 89
+- (90 + 97 + 90) / 3 = 92.3 → 92
+
+Therefore **no single contingency table reproduces the published 89% / 92%**. Any claim that our
+cells "reproduce the paper's figures" is wrong in principle, not merely imprecise.
+
+## The two candidate tables, checked honestly
+
+| Source | TP | FP | FN | TN | N | sens | spec |
 |---|---|---|---|---|---|---|---|
-| Cells as extracted in the review | 20 | 3 | 0 | 24 | **47** | **100.0%** | 88.9% |
-| Cells after re-extraction | 22 | 2 | 3 | 28 | **55** | 88.0% | 93.3% |
-| Values printed in the primary paper (Table 1, "Overall") | — | — | — | — | **55** | **89%** | **92%** |
+| Cells recorded as extracted (JAMA dataset) | 20 | 3 | 0 | 24 | 47 | **100.0%** | 88.9% |
+| Cells recorded as re-extracted (JAMA dataset) | 22 | 2 | 3 | 28 | **55** | 88.0% | 93.3% |
 
-## Why the second two rows agree and the first does not
+- The 47-patient version cannot be right: the cohort is 55.
+- The 55-patient version has a defensible N, and its sensitivity (88.0%) matches **Reader 1 and
+  Reader 3** exactly.
+- But its specificity (93.3%) matches **no** reader (90, 97, 90) and is 1.3 pp away from the
+  averaged 92%.
 
-The paper reports 55 patients, 89% sensitivity and 92% specificity.
+**Correction to the v0.1.0 text:** the original example described 88.0% and 93.3% as "consistent
+with the paper within rounding." They are 1.0 and 1.3 percentage points away respectively. That is
+not rounding, and the earlier phrasing concealed a real mismatch.
 
-- Re-extracted cells: 22 / 25 = 88.0% sensitivity, 28 / 30 = 93.3% specificity. Consistent with
-  the paper within rounding.
-- Extracted cells: 20 / 20 = 100% sensitivity, 27 / 30 = 90% specificity, and a 47-patient sample
-  that does not exist in the paper.
+**Correction to the v0.1.0 arithmetic:** one version of the text compared `27/30` for specificity.
+The correct figure from the recorded cells is `24/27 = 88.9%` (extracted) and `28/30 = 93.3%`
+(re-extracted). The `27/30` line was an error.
 
-The review's version is internally coherent — 20/3/0/24 does give 100% and 88.9% — which is
-exactly why it survives proofreading. It is only wrong against the source.
+## What remains supportable
 
-## Reproduce it
+1. The recorded extracted cells imply a 47-patient sample; the published cohort is 55. That is a
+   discrepancy on its face.
+2. No reader reports 100% sensitivity, so a 100% implied sensitivity is not supported by the paper.
+3. **We cannot confirm what the review actually printed.** Cochrane full text returns HTTP 412 to
+   automated requests, so the "extracted cells" are known to us only second-hand, from the JAMA
+   dataset. We never saw the review's table.
 
-1. Read Table 1 of the primary paper. "Overall" row: sensitivity 89, specificity 92. The text
-   states 55 patients (`45% (25/55)` for diagnostic yield).
-2. Compute: 22/(22+3) = 0.880; 28/(28+2) = 0.933.
-3. Compare with 20/(20+0) = 1.000 and 24/(24+3) = 0.889.
+## Who found this first
 
-Or, with the harness:
+**The source study did.** This trial is one of their 338 flagged rows. We rediscovered a
+previously reported discrepancy — the same error the Maya case made. There is no novel finding
+here, and the earlier framing implied there was.
 
-```bash
-python3 src/cells.py          # arithmetic self-test
-```
+## The honest summary
 
-and check the values by hand — this example is deliberately small enough that a script is not
-required.
-
-## Why this matters for the genre
-
-The error is invisible from the review's own text, and invisible to a consistency checker, because
-the review's arithmetic is self-consistent. Catching it required the primary document.
-
-That is the central constraint of automated reproducibility auditing: **internal consistency checks
-catch carelessness; only the source catches transcription.** Any tool that claims otherwise is
-going to produce confident noise.
+This case demonstrates that a flagged discrepancy can be *plausible* — the 55-patient version is
+close to the published values — without being *demonstrated*. Under examination it does not cleanly
+reconcile with any table in the paper. The correct conclusion is that **this specific case remains
+unresolved and needs the review's own table plus expert adjudication**, not that we caught an error.
