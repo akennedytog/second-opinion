@@ -61,7 +61,9 @@ def main():
     print("   mapping exists.\n")
 
     print("RESULT:", "counts PASS, validation BLOCKED" if ok else "counts FAIL")
-    return 0 if ok else 1
+    if not ok:
+        return 1
+    return 2  # counts verified, but the scientific validation is still blocked
 
 
 if __name__ == "__main__":
